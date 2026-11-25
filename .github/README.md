@@ -198,3 +198,5 @@ Based on the pypulseq example `write_epi_se_rs.py` and the Pulseq demo `writeEpi
 Uses [pypulseq](https://github.com/imr-framework/pypulseq) and [Pulseq](https://github.com/pulseq/pulseq)
 (MIT licensed) as git submodules, [MRzero](https://github.com/MRsources/MRzero-Core) for the simulation and
 [uv](https://github.com/astral-sh/uv) for the setup.
+
+The workshop material was developed with the help of Claude (Anthropic).
