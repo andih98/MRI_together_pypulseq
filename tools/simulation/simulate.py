@@ -33,6 +33,8 @@ if __name__ == '__main__':      # started directly: run it in the workshop envir
 import numpy as np
 import pypulseq as pp
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))      # repository folder, for tools/
+
 HERE = Path(__file__).resolve().parent
 TOOLS = HERE.parent
 EXPORT = TOOLS / 'export'
@@ -131,7 +133,8 @@ def simulate(seq_file, raw_file):
 
 def run(seq_file=None, delay=0.0):
     """Simulate the isocenter k-space of seq_file (None: the reference solution) and reconstruct it."""
-    sys.stdout.reconfigure(line_buffering=True)        # keep the order with the output of the recon
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(line_buffering=True)    # keep the order with the output of subprocesses
     EXPORT.mkdir(exist_ok=True)
     try:
         import MRzeroCore  # noqa: F401
@@ -167,9 +170,11 @@ def run(seq_file=None, delay=0.0):
     print('=== 2/3 MRzero simulation')
     simulate(sim_file, raw_file)
 
-    # 3) reconstruction (plot window, or PNG in tools/export without a display)
+    # 3) reconstruction (plot window / notebook, or PNG in tools/export without a display)
     print('=== 3/3 reconstruction')
-    return subprocess.run([sys.executable, str(HERE / 'recon_epi_rs.py'), str(iso_file), str(raw_file)]).returncode
+    from tools.simulation.recon_epi_rs import show_recon
+    show_recon(str(iso_file), str(raw_file))
+    return 0
 
 
 if __name__ == '__main__':

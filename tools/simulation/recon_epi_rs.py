@@ -141,16 +141,8 @@ def recon_epi(seq_path, raw_path, traj_delay=0.0, nav_corr=True):
     return results
 
 
-if __name__ == '__main__':
-    args = sys.argv[1:]
-    delay = 0.0
-    if '--delay' in args:
-        i = args.index('--delay')
-        delay = float(args[i + 1])
-        del args[i:i + 2]
-    seq_path = args[0]
-    raw_path = args[1] if len(args) > 1 else str(Path(seq_path).with_suffix('.raw'))
-
+def show_recon(seq_path, raw_path, delay=0.0):
+    """Reconstruct with and without navigator correction and plot raw data, k-space and images."""
     res = recon_epi(seq_path, raw_path, traj_delay=delay, nav_corr=True)
     res_nc = recon_epi(seq_path, raw_path, traj_delay=delay, nav_corr=False)
 
@@ -173,3 +165,16 @@ if __name__ == '__main__':
         fig.suptitle(f'simulated timing error {delay * 1e6:.1f} us')
     fig.tight_layout()
     show_or_save('EPI recon')
+
+
+if __name__ == '__main__':
+    args = sys.argv[1:]
+    delay = 0.0
+    if '--delay' in args:
+        i = args.index('--delay')
+        delay = float(args[i + 1])
+        del args[i:i + 2]
+    seq_path = args[0]
+    raw_path = args[1] if len(args) > 1 else str(Path(seq_path).with_suffix('.raw'))
+
+    show_recon(seq_path, raw_path, delay)

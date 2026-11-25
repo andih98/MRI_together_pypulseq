@@ -14,7 +14,27 @@ You do **not** need much Python or pypulseq experience: choose level 1 and follo
 
 ---
 
-## 1. Setup (before the workshop, ~10 min, mostly waiting)
+## 0. In the browser: Google Colab (nothing to install)
+
+Click on your level (you need a Google account):
+
+| Level | |
+|---|---|
+| Level 1 (beginner) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/andih98/MRI_together_pypulseq/blob/main/colab/level1_beginner.ipynb) |
+| Level 2 (advanced) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/andih98/MRI_together_pypulseq/blob/main/colab/level2_advanced.ipynb) |
+| Level 3 (expert) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/andih98/MRI_together_pypulseq/blob/main/colab/level3_expert.ipynb) |
+
+1. **File → Save a copy in Drive** first. Otherwise your work is lost when you close the tab.
+2. Run the first code cell (**setup**, ~1 min, once per session).
+3. Work through the cells from top to bottom: every STEP is one cell, the notebook explains the rest.
+
+The notebooks contain the same material as the level files (sections 2 and 3 apply to them, too). Instead of
+running the whole file, you run one STEP after the other, set `MILESTONE` in the parameter cell, and the check
+and the simulation are cells at the end. The rest of this page is about working on your own computer.
+
+---
+
+## 1. Setup on your own computer (before the workshop, ~10 min, mostly waiting)
 
 **1. Install Python and VS Code** (skip what you already have):
 
@@ -136,6 +156,7 @@ the toolbar (or the keys `o` zoom, `p` pan, `h` home) zooms and pans. All channe
 level1_beginner.py          start here (beginner)
 level2_advanced.py          start here (advanced)
 level3_expert.py            start here (expert)
+colab/                      the same three levels as Google Colab notebooks (section 0)
 tools/                      everything else -- you do not need to open it
     install.py              the setup (runs automatically on the first start)
     workshop_env.py         lets the level files run in the workshop environment
@@ -144,6 +165,8 @@ tools/                      everything else -- you do not need to open it
     rf_profile.py           plot helpers: RF slice profiles (Bloch simulation), zoomable plots
     simulation/             MRzero simulation of the isocenter k-space + reconstruction
     solution/               reference solution, fully commented
+    make_colab.py           creates colab/*.ipynb from the level files (after changing a level file:
+                            python tools/make_colab.py)
     docs/CHEATSHEET.md      pypulseq functions, formulas, Python basics
     external/               git submodules: pypulseq 1.5.0.post1 (installed from here), Pulseq (MATLAB, reference)
     requirements*.txt       the Python packages (installed by install.py)

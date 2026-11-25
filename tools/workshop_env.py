@@ -5,6 +5,7 @@
   restarts the level file with the Python of .venv. You do not have to activate anything.
 
 Set the environment variable WORKSHOP_NO_VENV=1 to switch this off (if you manage your environment yourself).
+In a notebook (Google Colab, Jupyter) it does nothing: the notebook installs its packages itself.
 """
 
 import os
@@ -22,7 +23,9 @@ def _in_workshop_venv():
         return False
 
 
-if not os.environ.get('WORKSHOP_NO_VENV'):
+IN_NOTEBOOK = 'ipykernel' in sys.modules or 'google.colab' in sys.modules
+
+if not os.environ.get('WORKSHOP_NO_VENV') and not IN_NOTEBOOK:
     if not install.is_installed():
         print('First start (or the requirements changed): setting up the workshop environment.')
         print('This happens only once and takes a few minutes.\n', flush=True)

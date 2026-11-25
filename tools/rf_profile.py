@@ -82,8 +82,10 @@ def show_or_save(title):
             plt.figure(n).savefig(path, dpi=120)
             print(f'saved {path}')
         plt.close('all')
+    elif 'inline' in matplotlib.get_backend().lower():
+        plt.show()                      # notebook, static images
     else:
-        for n in plt.get_fignums():
+        for n in plt.get_fignums():     # plot window or notebook widget (ipympl): zoomable
             add_scroll_zoom(plt.figure(n))
         if not _help_shown:
             print(INTERACTIVE_HELP)
