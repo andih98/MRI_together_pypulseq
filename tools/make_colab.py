@@ -145,7 +145,7 @@ Things to try: milestone 1 (b = 0) vs. milestone 2 (b = 500): what happens to th
     cells.append(code('''GRADIENT_DELAY = 0.0          # e.g. 3e-6: simulate a 3 us gradient delay
 
 from tools.simulation.simulate import run
-run(seq_filename, GRADIENT_DELAY)'''))
+run(seq_filename, GRADIENT_DELAY);      # the ; hides the return value'''))
     return cells
 
 
