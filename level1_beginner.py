@@ -1331,12 +1331,17 @@ MILESTONE = 1
 #   B7  Non-square FOV: fov = 220e-3, n_x = n_y = 96. Which numbers in the console change?
 #   B8  Simulation: SIMULATE = True (below), then GRADIENT_DELAY = 3e-6 -> what do the navigators fix?
 #       Compare milestone 1 (b = 0) with milestone 2 (b = 500): what happens to the CSF (ventricles)?
+#   B9  EPI distortions: fov = 240e-3 (the whole head fits into the FOV), SIMULATE = True, B0_SCALE = 0, 1, 3.
+#       In which direction is the image distorted, and why only in this one? The bandwidth per pixel in
+#       phase-encoding direction is only BW_PE = 1 / (echo spacing x n_y): how large is it, and how many pixels
+#       does a voxel with 40 Hz off-resonance move? What helps: bwPixel, ramp_sampling, part_fourier?
 
 # ==========================================================================================
 # Simulation (MRzero): after the check, simulate the isocenter k-space and reconstruct the image
 # ==========================================================================================
 SIMULATE = False             # True: simulate + reconstruct (a few seconds)
-GRADIENT_DELAY = 0.0         # e.g. 3e-6: simulate a 3 us gradient delay -> N/2 ghost (navigators fix it)
+GRADIENT_DELAY = 0.0         # in SECONDS: e.g. 3e-6 = a 3 us gradient delay -> N/2 ghost (navigators fix it)
+B0_SCALE = 1.0               # off-resonance of the phantom: 0 = none, 1 = realistic, 3 = strong -> EPI distortions
 
 if __name__ == '__main__':
     seq_file = EXPORT / f'my_dwepi_M{MILESTONE}.seq'
@@ -1352,4 +1357,4 @@ if __name__ == '__main__':
     if SIMULATE:
         from tools.simulation.simulate import run
         print()
-        run(seq_file, GRADIENT_DELAY)
+        run(seq_file, GRADIENT_DELAY, B0_SCALE)

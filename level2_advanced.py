@@ -741,12 +741,16 @@ MILESTONE = 1
 #       and run check_seq.py on every file (a small loop over main(...) does it).
 #   C6  Simulation: SIMULATE = True and GRADIENT_DELAY = 3e-6 (below). Compare b = 0 and b = 500.
 #   C7  Multi-shot / interleaved EPI: 2 shots, each with every 2nd line (blip area 2/fovY).
+#   C8  EPI distortions: fov = 240e-3, SIMULATE = True, B0_SCALE = 3. Predict the shift from
+#       BW_PE = 1 / (echo spacing x n_y), then minimise the distortion with the readout parameters.
+#       (C7 halves the effective echo spacing: compare!)
 
 # ==========================================================================================
 # Simulation (MRzero): after the check, simulate the isocenter k-space and reconstruct the image
 # ==========================================================================================
 SIMULATE = False             # True: simulate + reconstruct (a few seconds)
-GRADIENT_DELAY = 0.0         # e.g. 3e-6: simulate a 3 us gradient delay -> N/2 ghost (navigators fix it)
+GRADIENT_DELAY = 0.0         # in SECONDS: e.g. 3e-6 = a 3 us gradient delay -> N/2 ghost (navigators fix it)
+B0_SCALE = 1.0               # off-resonance of the phantom: 0 = none, 1 = realistic, 3 = strong -> EPI distortions
 
 if __name__ == '__main__':
     seq_file = EXPORT / f'my_dwepi_M{MILESTONE}.seq'
@@ -762,4 +766,4 @@ if __name__ == '__main__':
     if SIMULATE:
         from tools.simulation.simulate import run
         print()
-        run(seq_file, GRADIENT_DELAY)
+        run(seq_file, GRADIENT_DELAY, B0_SCALE)

@@ -118,6 +118,8 @@ away: timing, hardware limits, k-space, TE, b-value, navigators, slices. Every `
 reconstructed (a few seconds). Things to try:
 - milestone 1 (b = 0) vs. milestone 2 (b = 500): the CSF in the ventricles is bright at b = 0 and dark at b = 500;
 - `GRADIENT_DELAY = 3e-6`: an N/2 ghost appears in the uncorrected image, the navigators (milestone 3) remove it.
+- `B0_SCALE = 3` (off-resonance of the phantom x 3) with `fov = 240e-3`: EPI distortions in phase-encoding direction.
+  The phantom has a realistic B0 map (about -46 ... +43 Hz, strongest above the sinuses); `B0_SCALE = 0` switches it off.
 
 Only **one k-space** is simulated: the slice at the isocenter, first repetition. The other slices and repetitions
 are cut out of the sequence before the simulation (the script tells you so), because each of them would cost

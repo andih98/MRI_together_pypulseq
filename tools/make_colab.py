@@ -141,11 +141,13 @@ Only **one** k-space is simulated: the other slices / repetitions are cut out of
 would cost the same simulation time again, and the phantom is 2D (it only exists at z = 0).
 
 Things to try: milestone 1 (b = 0) vs. milestone 2 (b = 500): what happens to the CSF in the ventricles?
-`GRADIENT_DELAY = 3e-6`: an N/2 ghost appears without correction; the navigators (milestone 3) remove it.'''))
-    cells.append(code('''GRADIENT_DELAY = 0.0          # e.g. 3e-6: simulate a 3 us gradient delay
+`GRADIENT_DELAY = 3e-6`: an N/2 ghost appears without correction; the navigators (milestone 3) remove it.
+`B0_SCALE = 3` (with `fov = 240e-3` in the parameter cell): EPI distortions in phase-encoding direction.'''))
+    cells.append(code('''GRADIENT_DELAY = 0.0          # in SECONDS: e.g. 3e-6 = a 3 us gradient delay
+B0_SCALE = 1.0                # off-resonance of the phantom: 0 = none, 1 = realistic, 3 = strong -> distortions
 
 from tools.simulation.simulate import run
-run(seq_filename, GRADIENT_DELAY);      # the ; hides the return value'''))
+run(seq_filename, GRADIENT_DELAY, B0_SCALE);      # the ; hides the return value'''))
     return cells
 
 
@@ -204,6 +206,9 @@ print(f'milestone {MILESTONE}: b = {b_value}, {n_nav} navigators, {n_slices} sli
         text = '\n'.join(l[2:] if l.startswith('# ') else l.lstrip('#') for l in extras.group(2).splitlines())
         text = (text.replace('SIMULATE = True (below), then GRADIENT_DELAY = 3e-6',
                              'the simulation cell, then GRADIENT_DELAY = 3e-6')
+                    .replace('SIMULATE = True, B0_SCALE', 'the simulation cell with B0_SCALE')
+                    .replace('fov = 240e-3, SIMULATE = True, B0_SCALE', 'fov = 240e-3, the simulation cell with B0_SCALE')
+                    .replace('SIMULATE = True', 'the simulation cell')
                     .replace('SIMULATE = True and GRADIENT_DELAY = 3e-6 (below)',
                              'the simulation cell with GRADIENT_DELAY = 3e-6'))
         text = re.sub(r'main\(\.\.\., (\w+)=(.*?)\)\.', r'\1 = \2 in the parameter cell.', text)

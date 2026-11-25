@@ -6,6 +6,7 @@ By hand (from the repository folder):
     python tools/simulation/simulate.py                                     the reference solution
     python tools/simulation/simulate.py tools/export/my_dwepi_M4.seq        any .seq file
     python tools/simulation/simulate.py tools/export/my_dwepi_M4.seq 3e-6   + a 3 us gradient delay
+    python tools/simulation/simulate.py tools/export/my_dwepi_M4.seq 0 5    off-resonance x 5 (EPI distortions)
 
 result: plot window (or tools/export/EPI_recon_fig1.png without a display)
 
@@ -19,7 +20,6 @@ MRzero: https://github.com/MRsources/MRzero-Core  (phantom: numerical_brain_crop
 
 import contextlib
 import os
-import subprocess
 import sys
 import time
 import warnings
@@ -101,7 +101,7 @@ def quiet():
             os.close(saved)
 
 
-def load_phantom():
+def load_phantom(b0_scale=1.0):
     import MRzeroCore as mr0
     if not PHANTOM_FILE.exists():
         PHANTOM_FILE.parent.mkdir(exist_ok=True)
@@ -113,10 +113,13 @@ def load_phantom():
     # the original phantom has the same D everywhere: give CSF a higher one -> visible diffusion contrast
     ph.D[:] = D_TISSUE
     ph.D[ph.T1 > 3.0] = D_CSF
+    # off-resonance: the phantom has a B0 map (about -46 ... +43 Hz); b0_scale = 0 switches it off,
+    # larger values exaggerate it -> stronger EPI distortions in phase-encoding direction
+    ph.B0 = ph.B0 * b0_scale
     return ph
 
 
-def simulate(seq_file, raw_file):
+def simulate(seq_file, raw_file, b0_scale=1.0):
     """MRzero simulation of the whole phantom, in parts of CHUNK_VOXELS voxels.
 
     The MR signal is the sum of the signals of all voxels, so the phantom can be simulated in parts and the
@@ -126,11 +129,13 @@ def simulate(seq_file, raw_file):
 
     import MRzeroCore as mr0
     import torch
-    ph = load_phantom()
+    ph = load_phantom(b0_scale)
     t = time.time()
     voxels = torch.nonzero(ph.PD.flatten() > 0).flatten()
     n_parts = -(-len(voxels) // CHUNK_VOXELS)
-    print(f'phantom: {tuple(ph.PD.shape[:2])} voxels, {len(voxels)} with signal, simulated in {n_parts} parts')
+    b0 = ph.B0[ph.PD > 0]
+    print(f'phantom: {tuple(ph.PD.shape[:2])} voxels, {len(voxels)} with signal, simulated in {n_parts} parts, '
+          f'off-resonance {float(b0.min()):.0f} ... {float(b0.max()):.0f} Hz (B0_SCALE = {b0_scale:g})')
     with quiet():
         seq = mr0.Sequence.import_file(str(seq_file))
         graph = mr0.compute_graph(seq, ph.build(), 200, 1e-3)
@@ -147,10 +152,18 @@ def simulate(seq_file, raw_file):
     Path(str(raw_file) + '.shape').write_text(f'{s.size} 1 1\n')
 
 
-def run(seq_file=None, delay=0.0):
-    """Simulate the isocenter k-space of seq_file (None: the reference solution) and reconstruct it."""
+def run(seq_file=None, delay=0.0, b0_scale=1.0):
+    """Simulate the isocenter k-space of seq_file (None: the reference solution) and reconstruct it.
+
+    delay: gradient hardware delay in SECONDS, e.g. 3e-6 = 3 us (0: none)
+    b0_scale: scales the off-resonance (B0 map) of the phantom: 0 = none, 1 = as measured, 5 = strong
+    """
+    if abs(delay) > 100e-6:
+        print(f'>>> GRADIENT_DELAY = {delay:g} s is far too large: it is given in SECONDS.\n'
+              f'    Realistic gradient delays are a few microseconds, e.g. GRADIENT_DELAY = 3e-6 (= 3 us).')
+        return 1
     if hasattr(sys.stdout, 'reconfigure'):
-        sys.stdout.reconfigure(line_buffering=True)    # keep the order with the output of subprocesses
+        sys.stdout.reconfigure(line_buffering=True)    # print immediately (also when piped)
     EXPORT.mkdir(exist_ok=True)
     try:
         import MRzeroCore  # noqa: F401
@@ -178,13 +191,17 @@ def run(seq_file=None, delay=0.0):
     if delay:
         sim_file = EXPORT / f'{seq_file.stem}_iso_hwdelay.seq'
         raw_file = sim_file.with_suffix('.raw')
-        print(f'    simulate a gradient delay of {delay} s (the recon still uses the original timing)')
-        subprocess.run([sys.executable, str(HERE / 'make_hw_delay_seq.py'), str(iso_file), str(sim_file), str(delay)],
-                       check=True)
+        print(f'    simulate a gradient delay of {delay * 1e6:g} us (the recon still uses the original timing)')
+        from tools.simulation.make_hw_delay_seq import shift_adcs
+        try:
+            shift_adcs(iso_file, sim_file, delay)
+        except ValueError as e:
+            print(f'\n>>> {e}')
+            return 1
 
     # 2) simulation
     print('=== 2/3 MRzero simulation')
-    simulate(sim_file, raw_file)
+    simulate(sim_file, raw_file, b0_scale)
 
     # 3) reconstruction (plot window / notebook, or PNG in tools/export without a display)
     print('=== 3/3 reconstruction')
@@ -195,4 +212,5 @@ def run(seq_file=None, delay=0.0):
 
 if __name__ == '__main__':
     args = sys.argv[1:]
-    sys.exit(run(args[0] if args else None, float(args[1]) if len(args) > 1 else 0.0))
+    sys.exit(run(args[0] if args else None, float(args[1]) if len(args) > 1 else 0.0,
+                 float(args[2]) if len(args) > 2 else 1.0))
