@@ -84,7 +84,7 @@ def parse(py):
     i_sig = next(i for i in range(i_def, len(lines)) if lines[i] == '):')
     i_ret = next(i for i in range(i_sig, len(lines)) if lines[i] == '    return seq')
     header = lines[:i_def]
-    imports = [l for l in header if (l.startswith('import ') or l.startswith('from '))
+    imports = [l.split('  # noqa')[0] for l in header if (l.startswith('import ') or l.startswith('from '))
                and 'workshop_env' not in l and not l.startswith('import traceback')]
     params = []
     for l in lines[i_def + 1:i_sig]:
@@ -95,7 +95,8 @@ def parse(py):
             params.append(l.strip())
     body = [l[4:] if l.startswith('    ') else l for l in lines[i_sig + 1:i_ret]]
     tail = '\n'.join(lines[i_ret + 1:])
-    milestones = re.search(r'^MILESTONES = \{.*?^\}', tail, re.S | re.M).group(0)
+    milestones = re.search(r'^MILESTONES = \{.*?^\}', tail, re.S | re.M)
+    milestones = milestones.group(0) if milestones else None
     extras = re.search(r'^# (BONUS|CHALLENGES).*?\n# =+\n(.*?)\n\n', tail, re.S | re.M)
     return doc, imports, params, body, milestones, extras
 
@@ -115,6 +116,37 @@ def steps(body):
         i += 1
     out.append((title, cur))
     return [(t, '\n'.join(c).strip('\n')) for t, c in out]
+
+
+def step_cells(body):
+    cells = []
+    for t, c in steps(body):
+        if t is None:
+            continue
+        if t.startswith('STEP 11'):
+            c = ('seq = pp.Sequence(system)      # a new, empty sequence: this cell can be run again\n\n' + c)
+        m = re.match(r'(STEP \d+: .*?)\s{2,}\((.*)\)\s*$', t)
+        head = f'## {m.group(1)}\n\n*{m.group(2)}*' if m else f'## {t}'
+        cells.append(md(head))
+        cells.append(code(c))
+    return cells
+
+
+def simulation_cells():
+    cells = []
+    cells.append(md('''## Simulation (MRzero)
+
+Simulates the k-space of the slice at the isocenter and reconstructs the image (a few seconds).
+Only **one** k-space is simulated: the other slices / repetitions are cut out of the sequence, because each of them
+would cost the same simulation time again, and the phantom is 2D (it only exists at z = 0).
+
+Things to try: milestone 1 (b = 0) vs. milestone 2 (b = 500): what happens to the CSF in the ventricles?
+`GRADIENT_DELAY = 3e-6`: an N/2 ghost appears without correction; the navigators (milestone 3) remove it.'''))
+    cells.append(code('''GRADIENT_DELAY = 0.0          # e.g. 3e-6: simulate a 3 us gradient delay
+
+from tools.simulation.simulate import run
+run(seq_filename, GRADIENT_DELAY)'''))
+    return cells
 
 
 def level_notebook(name, label):
@@ -162,31 +194,12 @@ seq_filename = str(EXPORT / f'my_dwepi_M{MILESTONE}.seq')
 plot, test_report, write_seq = True, False, True
 print(f'milestone {MILESTONE}: b = {b_value}, {n_nav} navigators, {n_slices} slice(s)')'''))
 
-    for t, c in steps(body):
-        if t is None:
-            continue
-        if t.startswith('STEP 11'):
-            c = ('seq = pp.Sequence(system)      # a new, empty sequence: this cell can be run again\n\n' + c)
-        m = re.match(r'(STEP \d+: .*?)\s{2,}\((.*)\)\s*$', t)
-        head = f'## {m.group(1)}\n\n*{m.group(2)}*' if m else f'## {t}'
-        cells.append(md(head))
-        cells.append(code(c))
+    cells += step_cells(body)
 
     cells.append(md('## Check\n\nChecks the written sequence: timing, hardware limits, k-space, TE, b-value, '
                     'navigators, slices. Every FAIL comes with a hint.'))
     cells.append(code('run_check(seq_filename, milestone=MILESTONE)'))
-    cells.append(md('''## Simulation (MRzero)
-
-Simulates the k-space of the slice at the isocenter and reconstructs the image (a few seconds).
-Only **one** k-space is simulated: the other slices / repetitions are cut out of the sequence, because each of them
-would cost the same simulation time again, and the phantom is 2D (it only exists at z = 0).
-
-Things to try: milestone 1 (b = 0) vs. milestone 2 (b = 500): what happens to the CSF in the ventricles?
-`GRADIENT_DELAY = 3e-6`: an N/2 ghost appears without correction; the navigators (milestone 3) remove it.'''))
-    cells.append(code('''GRADIENT_DELAY = 0.0          # e.g. 3e-6: simulate a 3 us gradient delay
-
-from tools.simulation.simulate import run
-run(seq_filename, GRADIENT_DELAY)'''))
+    cells += simulation_cells()
     if extras:
         text = '\n'.join(l[2:] if l.startswith('# ') else l.lstrip('#') for l in extras.group(2).splitlines())
         text = (text.replace('SIMULATE = True (below), then GRADIENT_DELAY = 3e-6',
@@ -197,6 +210,45 @@ run(seq_filename, GRADIENT_DELAY)'''))
         head = 'BONUS tasks' if extras.group(1) == 'BONUS' else 'CHALLENGES'
         cells.append(md(f'## {head}\n\nMilestone 4 passes? Then try these (the check must still pass):\n\n'
                         + fenced(text)))
+    return cells
+
+
+SOLUTION_HOWTO = '''## How to use this notebook
+
+This is the **reference solution** of the workshop: the complete sequence, fully commented.
+Try the level notebooks first!
+
+1. Run the **setup cell** below (once per session, ~1 min), then **Runtime → Run all**.
+2. Every STEP is one cell, with the same explanations and drawings as in the levels.
+3. Change parameters in the parameter cell (e.g. `b_value = 0`, `n_slices = 1`, `ramp_sampling = 60`)
+   and run all cells again: the check and the simulation at the end show the effect.
+'''
+
+
+def solution_notebook():
+    src = 'tools/solution/tut_dw_se_epi_rs.py'
+    doc, imports, params, body, _, _ = parse(ROOT / src)
+    intro = doc.strip('\n')
+    overview = intro[intro.index('One slice of the sequence'):intro.index('The script is split')].rstrip()
+    name = 'solution'
+    cells = [md('# Diffusion-weighted spin-echo EPI with pypulseq: REFERENCE SOLUTION\n\n' + badge(name)),
+             md(fenced(overview)), md(SOLUTION_HOWTO), code(SETUP),
+             md('## Imports'),
+             code('\n'.join(l for l in imports if not l.startswith('import sys'))
+                  + "\n\nEXPORT = Path('tools/export')      # the .seq file goes here"),
+             md('## Parameters\n\nAll features are switched on. The milestones of the levels correspond to\n'
+                '`b_value = 0, n_nav = 0, n_slices = 1` (milestone 1), `b_value = 500` (2), `n_nav = 3` (3) and '
+                '`n_slices = 5` (4).'),
+             code('\n'.join(params) + """
+
+seq_filename = str(EXPORT / 'solution.seq')
+plot = True
+test_report = False         # True: pypulseq's test report (long)
+write_seq = True""")]
+    cells += step_cells(body)
+    cells.append(md('## Check'))
+    cells.append(code('from tools.check_seq import run_check\n\nrun_check(seq_filename)'))
+    cells += simulation_cells()
     return cells
 
 
@@ -225,6 +277,7 @@ def main():
     for name, label in LEVELS[:2]:
         write(name, level_notebook(name, label))
     write('level3_expert', expert_notebook())
+    write('solution', solution_notebook())
 
 
 if __name__ == '__main__':

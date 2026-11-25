@@ -23,6 +23,7 @@ Click on your level (you need a Google account):
 | Level 1 (beginner) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/andih98/MRI_together_pypulseq/blob/main/colab/level1_beginner.ipynb) |
 | Level 2 (advanced) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/andih98/MRI_together_pypulseq/blob/main/colab/level2_advanced.ipynb) |
 | Level 3 (expert) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/andih98/MRI_together_pypulseq/blob/main/colab/level3_expert.ipynb) |
+| Reference solution (try without it first!) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/andih98/MRI_together_pypulseq/blob/main/colab/solution.ipynb) |
 
 1. **File → Save a copy in Drive** first. Otherwise your work is lost when you close the tab.
 2. Run the first code cell (**setup**, ~1 min, once per session).
@@ -156,7 +157,7 @@ the toolbar (or the keys `o` zoom, `p` pan, `h` home) zooms and pans. All channe
 level1_beginner.py          start here (beginner)
 level2_advanced.py          start here (advanced)
 level3_expert.py            start here (expert)
-colab/                      the same three levels as Google Colab notebooks (section 0)
+colab/                      the three levels and the solution as Google Colab notebooks (section 0)
 tools/                      everything else -- you do not need to open it
     install.py              the setup (runs automatically on the first start)
     workshop_env.py         lets the level files run in the workshop environment
