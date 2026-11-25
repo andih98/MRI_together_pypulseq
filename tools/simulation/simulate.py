@@ -40,7 +40,7 @@ TOOLS = HERE.parent
 EXPORT = TOOLS / 'export'
 PHANTOM_URL = 'https://github.com/MRsources/MRzero-Core/raw/main/documentation/playground_mr0/numerical_brain_cropped.mat'
 PHANTOM_FILE = HERE / 'data' / 'numerical_brain_cropped.mat'
-PHANTOM_SIZE = (64, 64)          # phantom resolution for the simulation (more = slower, more memory)
+CHUNK_VOXELS = 2000              # voxels simulated at once: the memory stays at ~1 GB for any phantom size
 D_CSF, D_TISSUE = 3.0, 0.8       # diffusion coefficients [10^-3 mm^2/s]; CSF = voxels with T1 > 3 s
 
 
@@ -109,7 +109,7 @@ def load_phantom():
         urlretrieve(PHANTOM_URL, PHANTOM_FILE)
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        ph = mr0.VoxelGridPhantom.load_mat(str(PHANTOM_FILE)).interpolate(*PHANTOM_SIZE, 1)
+        ph = mr0.VoxelGridPhantom.load_mat(str(PHANTOM_FILE))      # full resolution (141 x 161 voxels)
     # the original phantom has the same D everywhere: give CSF a higher one -> visible diffusion contrast
     ph.D[:] = D_TISSUE
     ph.D[ph.T1 > 3.0] = D_CSF
@@ -117,14 +117,30 @@ def load_phantom():
 
 
 def simulate(seq_file, raw_file):
+    """MRzero simulation of the whole phantom, in parts of CHUNK_VOXELS voxels.
+
+    The MR signal is the sum of the signals of all voxels, so the phantom can be simulated in parts and the
+    signals added up: same result, but much less memory (all voxels at once would need ~4 GB).
+    """
+    import copy
+
     import MRzeroCore as mr0
-    data = load_phantom()
+    import torch
+    ph = load_phantom()
     t = time.time()
+    voxels = torch.nonzero(ph.PD.flatten() > 0).flatten()
+    n_parts = -(-len(voxels) // CHUNK_VOXELS)
+    print(f'phantom: {tuple(ph.PD.shape[:2])} voxels, {len(voxels)} with signal, simulated in {n_parts} parts')
     with quiet():
-        data = data.build()
         seq = mr0.Sequence.import_file(str(seq_file))
-        graph = mr0.compute_graph(seq, data, 200, 1e-3)
-        signal = mr0.execute_graph(graph, seq, data, print_progress=False)
+        graph = mr0.compute_graph(seq, ph.build(), 200, 1e-3)
+        signal = 0
+        for k in range(0, len(voxels), CHUNK_VOXELS):
+            part = copy.deepcopy(ph)
+            keep = torch.zeros(ph.PD.numel(), dtype=torch.bool)
+            keep[voxels[k:k + CHUNK_VOXELS]] = True
+            part.PD = ph.PD * keep.reshape(ph.PD.shape)
+            signal = signal + mr0.execute_graph(graph, seq, part.build(), print_progress=False)
     print(f'simulation: {time.time() - t:.1f} s')
     s = signal.detach().cpu().numpy().astype(np.complex64).reshape(-1)
     s.tofile(raw_file)                                      # same format as recon_epi_rs.py expects

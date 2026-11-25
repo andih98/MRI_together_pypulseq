@@ -207,7 +207,7 @@ dictionary at the bottom of the file, e.g. `4: dict(b_value=1000, n_nav=3, n_sli
 - One b-value and one direction per file. No fat saturation.
 - System limits `max_grad = 90 mT/m`, `max_slew = 130 T/m/s`: adapt them to your scanner before measuring.
   PNS and forbidden echo spacings are not checked.
-- Simulation: only the isocenter k-space, 2D phantom (64 × 64, CSF with a higher diffusion coefficient),
+- Simulation: only the isocenter k-space, 2D phantom (141 × 161 voxels of 1.4 × 1.2 mm, CSF with a higher diffusion coefficient),
   no eddy currents. MRzero uses a phase-graph simulation with simplified RF pulses: slice profiles are not simulated.
 - Reconstruction: single coil, partial Fourier by zero-filling.
 - `seq.test_report()` shows a wrong TE (it takes the first navigator echo); the actual TE is the `te` parameter.
