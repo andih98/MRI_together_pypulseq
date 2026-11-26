@@ -1,4 +1,4 @@
-"""Generate the Google Colab notebooks (colab/*.ipynb) from the level files.
+"""Generate the Google Colab notebooks (notebooks/*.ipynb) from the level files.
 
 The level files (level1_beginner.py, ...) are the only source: after changing them, run
 
@@ -13,7 +13,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / 'colab'
+OUT = ROOT / 'notebooks'
 REPO = 'andih98/MRI_together_pypulseq'
 BRANCH = 'main'
 LEVELS = [('level1_beginner', 'LEVEL 1 (beginner)'), ('level2_advanced', 'LEVEL 2 (advanced)'),
@@ -21,7 +21,7 @@ LEVELS = [('level1_beginner', 'LEVEL 1 (beginner)'), ('level2_advanced', 'LEVEL 
 
 
 def badge(name):
-    url = f'https://colab.research.google.com/github/{REPO}/blob/{BRANCH}/colab/{name}.ipynb'
+    url = f'https://colab.research.google.com/github/{REPO}/blob/{BRANCH}/notebooks/{name}.ipynb'
     return f'[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)]({url})'
 
 
@@ -47,11 +47,11 @@ if 'google.colab' in sys.modules:
     if not os.path.isdir('/content/MRI_together_pypulseq'):
         !git clone --quiet --depth 1 -b {BRANCH} {{REPO_URL}} /content/MRI_together_pypulseq
     %cd /content/MRI_together_pypulseq
-    !pip install --quiet -r colab/requirements-colab.txt
+    !pip install --quiet -r notebooks/requirements-colab.txt
     !pip install --quiet MRzeroCore || echo "MRzero (only for the simulation) could not be installed."
     from google.colab import output
     output.enable_custom_widget_manager()
-elif os.path.basename(os.getcwd()) == 'colab':      # local Jupyter: work in the repository folder
+elif os.path.basename(os.getcwd()) == 'notebooks':      # local Jupyter: work in the repository folder
     %cd ..
 sys.path.insert(0, os.getcwd())
 try:
