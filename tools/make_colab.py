@@ -39,6 +39,8 @@ def fenced(text):
 
 
 SETUP = f'''# ▶ Run this cell first (once per session, ~1 min): gets the workshop files and installs the packages.
+import importlib
+import importlib.util
 import os
 import sys
 
@@ -47,13 +49,27 @@ if 'google.colab' in sys.modules:
     if not os.path.isdir('/content/MRI_together_pypulseq'):
         !git clone --quiet --depth 1 -b {BRANCH} {{REPO_URL}} /content/MRI_together_pypulseq
     %cd /content/MRI_together_pypulseq
-    !pip install --quiet -r notebooks/requirements-colab.txt
-    !pip install --quiet MRzeroCore || echo "MRzero (only for the simulation) could not be installed."
     from google.colab import output
     output.enable_custom_widget_manager()
 elif os.path.basename(os.getcwd()) == 'notebooks':      # local Jupyter: work in the repository folder
     %cd ..
 sys.path.insert(0, os.getcwd())
+
+
+def missing(*modules):      # quick check: which packages are not installed yet?
+    importlib.invalidate_caches()
+    return [m for m in modules if importlib.util.find_spec(m) is None]
+
+
+# %pip installs into the environment of this notebook (also in a local Jupyter); skipped if already there
+if missing('pypulseq', 'sigpy', 'ipympl'):
+    %pip install --quiet -r notebooks/requirements-colab.txt
+if missing('MRzeroCore'):
+    %pip install --quiet MRzeroCore
+    if missing('MRzeroCore'):
+        print('MRzero (only for the simulation) could not be installed.')
+if missing('pypulseq'):
+    print('pypulseq is missing -- the installation failed, see the messages above.')
 try:
     get_ipython().run_line_magic('matplotlib', 'widget')     # zoomable plots (toolbar: zoom, pan, home)
 except Exception:
