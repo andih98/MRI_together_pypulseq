@@ -14,7 +14,10 @@ You do **not** need much Python or pypulseq experience: choose level 1 and follo
 
 ---
 
-## 0. In the browser: Google Colab (nothing to install)
+## 1. Working Environment
+There two main options for working with this tutorial, which are described in the following subsections.
+
+### 1.1. In the browser: Google Colab (nothing to install)
 
 Click on your level (you need a Google account):
 
@@ -35,7 +38,7 @@ and the simulation are cells at the end. The rest of this page is about working 
 
 ---
 
-## 1. Setup on your own computer (before the workshop, ~10 min, mostly waiting)
+### 1.2. Setup on your own computer (before the workshop, ~10 min, mostly waiting)
 
 **1. Install Python and VS Code** (skip what you already have):
 
